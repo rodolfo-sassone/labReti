@@ -44,7 +44,12 @@ int main(int argc, char *argv[]) {
 	}
 #endif
 	int my_socket;
+	my_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+	if(my_socket<0) {
+		printf("***Error: creation socket***");
+		return 0;
+	}
 	//...
 
 	closesocket(my_socket);

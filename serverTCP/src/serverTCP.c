@@ -22,6 +22,8 @@
 #define closesocket close
 #endif
 
+#define TRUE 1
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -39,13 +41,62 @@ int main(int argc, char *argv[]) {
 	WSADATA wsa_data;
 	int result = WSAStartup(MAKEWORD(2,2), &wsa_data);
 	if (result != NO_ERROR) {
-		printf("Error at WSAStartup()\n");
+		printf("***Error: WSAStartup()***\n");
 		return 0;
 	}
 #endif
 	int my_socket;
+	my_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	//...
+	if(my_socket<0)
+	{
+		printf("***Error: creation socket***\n");
+		return -1;
+	}
+
+	//Assegnazione dell'indirizzo alla socket
+	struct sockaddr_in sad;
+	memset(&sad, 0, sizeof(sad));
+	sad.sin_family=AF_INET;
+	sad.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sad.sin_port = htons(6666);
+	int binded = bind(my_socket,(struct sockaddr*) &sad, sizeof(sad));
+	if(binded<0)
+	{
+		printf("***Error: binding***\n");
+		closesocket(my_socket);
+		clearwinsock();
+		return -1;
+	}
+
+	//Ci mettiamo in ascolto
+	if(listen(my_socket, 6)<0)
+	{
+		printf("***Error: listen()***\n");
+		closesocket(my_socket);
+		clearwinsock();
+		return -1;
+	}
+
+	//Accettare richiesta
+	struct sockaddr_in cad;
+	int c_socket;
+	int c_len;
+
+	while (TRUE)
+	{
+		c_len = sizeof(c_len);
+		c_socket = accept(c_socket, (struct sockaddr*) &cad, &c_len);
+		if(c_socket<0)
+		{
+			printf("***Error: accept()***\n");
+			closesocket(c_socket);
+			clearwinsock();
+			return -2;
+		}
+
+		printf("Servendo il client %s...", inet_ntoa(cad.sin_addr));
+	}
 
 	closesocket(my_socket);
 	clearwinsock();
