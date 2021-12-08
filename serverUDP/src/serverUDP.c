@@ -46,6 +46,7 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 #endif
+	puts("Avviato");
 	int my_socket;
 	my_socket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -70,15 +71,15 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-
+	struct sockaddr_in cad;
+	char buff[MAX_BUFF];
 	while(TRUE)
 	{
-		char buff[MAX_BUFF];
-		struct sockadrr_in cad;
 		int c_len = sizeof(cad);
+		memset(&cad, 0 , c_len);
 		int byte_rcv = recvfrom(my_socket, buff, MAX_BUFF, 0,(struct sockaddr*) &cad, &c_len);
 
-		struct hostent* c = gethostbyaddr((char*) &cad, 4, AF_INET);
+		struct hostent* c = gethostbyaddr((char*) &cad.sin_addr, 4, PF_INET);
 		if(c == NULL)
 		{
 			puts("***Error: gethostbyaddr()***");
@@ -88,7 +89,8 @@ int main(int argc, char *argv[]) {
 		printf("Nome mittente: %s\nIndirizzo mittente: %s\nMessaggio: %s\n", c->h_name, inet_ntoa(cad.sin_addr), buff);
 
 		memset(buff,0,sizeof(buff));
-		byte_rcv = recvfrom(my_socket, buff, MAX_BUFF, 0, &cad, sizeof(cad));
+		memset(&cad, 0 , c_len);
+		byte_rcv = recvfrom(my_socket, buff, MAX_BUFF, 0,(struct sockaddr*) &cad, &c_len);
 
 		printf("Ricevuto: %s\n", buff);
 
@@ -114,13 +116,15 @@ int main(int argc, char *argv[]) {
 void eliminateVowels(char* s)
 {
 	int i=0;
-	for(i=0;i<strlen(s);i++)
+	while(i<strlen(s))
 	{
 		if(s[i]=='a' || s[i]=='e' || s[i]=='i' || s[i]=='o' || s[i]=='u')
 		{
-			for(int j=i;j<strlen(s)-1;j++)
+			for(int j=i;j<strlen(s);j++)
 				s[j]=s[j+1];
 		}
+		else
+			i++;
 	}
 }
 

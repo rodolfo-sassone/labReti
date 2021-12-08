@@ -22,6 +22,8 @@
 #endif
 
 #include <stdio.h>
+#include <string.h>
+
 #define MAX_BUFF 1024
 #define NO_ERROR 0
 void clearwinsock() {
@@ -49,30 +51,63 @@ int main(int argc, char *argv[]) {
 		printf("***Error: creation socket***\n");
 		return -1;
 	}
-	char hostname[512];
-	int port = 0;
+	char input[512] = {""};
+
 
 	//Ricevi da tastiera nome server:porta
 	puts("Inserisci il nome del server e la porta (nome:porta): ");
-	scanf("%s:%d", hostname, &port);
+	scanf("%s", input);
+
+	char separator[2] = ":";
+	char* t;
+	char* token[2];
+	int i=0;
+
+	//Tokenization
+	t = strtok(input, separator);
+
+	while(t != NULL && i < 2)
+	{
+		token[i]=t;
+		i++;
+		t=strtok(NULL, separator);
+	}
+
+	if (i!=2)
+	{
+		puts("Error: Indirizzo non valido***");
+		closesocket(my_socket);
+		clearwinsock();
+		return-1;
+	}
+
+	char hostname[512] = {""};
+	int port = 0;
+
+	strcpy(hostname, token[0]);
+	port = atoi(token[1]);
+
 	//Info su server dal nome
 	struct hostent* h = gethostbyname(hostname);
 	if(h == NULL)
 	{
 		puts("***Error: gethostbyname()***");
+		system("pause");
 		closesocket(my_socket);
 		clearwinsock();
 		return -1;
 	}
 	struct sockaddr_in sad;
+	struct in_addr* addr = (struct in_addr*) h->h_addr;
+	memset(&sad, 0, sizeof(sad));
 	sad.sin_family = AF_INET;
-	sad.sin_addr.s_addr = inet_addr(h->h_addr);
-	sad.sin_port = htons(port);
+	sad.sin_addr = *addr;
+	sad.sin_port = htons(6666);
 
 	//Inviamo primo messaggio
 	char* first = "Helo";
-	int sended = sendto(my_socket, first, sizeof(first), 0,(struct sockaddr*) &sad, sizeof(sad));
-	if(sended != sizeof(first))
+	int sended = sendto(my_socket, first, strlen(first), 0,(struct sockaddr*) &sad, sizeof(sad));
+	if(sended != strlen(first))
 		puts("***Error: Messaggio non inviato correttamente***");
 
 	//Secondo messaggio
@@ -81,14 +116,15 @@ int main(int argc, char *argv[]) {
 	puts("Scrivi la stringa da inviare al server: ");
 	scanf("%s", buff);
 	sended = sendto(my_socket, buff, strlen(buff), 0,(struct sockaddr*) &sad, sizeof(sad));
-	if(sended != sizeof(first))
+	if(sended != strlen(buff))
 		puts("***Error: Messaggio non inviato correttamente***");
 
 	//Riceviamo risposta
 	memset(buff,0,sizeof(buff));
 	struct sockaddr_in fromAddr;
+	memset(&fromAddr, 0, sizeof(fromAddr));
 	int fromAddrSize = sizeof(fromAddr);
-	recvfrom(my_socket, buff, sizeof(buff), 0,(struct sockaddr*) &fromAddr, &fromAddrSize);
+	recvfrom(my_socket, buff, MAX_BUFF, 0,(struct sockaddr*) &fromAddr, &fromAddrSize);
 	if(fromAddr.sin_addr.s_addr != sad.sin_addr.s_addr)
 	{
 		puts("***Error: Ricevuto pacchetto da sorgente sconosciuta.");
@@ -98,7 +134,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	memset(h,0,sizeof(*h));
-	h = gethostbyaddr((char*) &fromAddr, 4, AF_INET);
+	h = gethostbyaddr((char*) &fromAddr.sin_addr, 4, AF_INET);
 	if(h == NULL)
 	{
 		puts("***Error: gethostbyaddr()***");
@@ -107,7 +143,8 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 	char* serverName = h->h_name;
-	printf("Stringa \"%s\" ricevuta dal server: %s \t %s", buff, serverName, inet_ntoa(fromAddr.sin_addr));
+	struct in_addr* serverAddr = (struct in_addr*) h->h_addr;
+	printf("Stringa \"%s\" ricevuta dal server: %s \t %s\n", buff, serverName, inet_ntoa(*serverAddr));
 
 	system("pause");
 	closesocket(my_socket);
