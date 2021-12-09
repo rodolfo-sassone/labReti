@@ -1,7 +1,7 @@
 /*
  ============================================================================
  Name        : clientUDP.c
- Author      : 
+ Author      : Rodolfo Pio Sassone
  Version     :
  Copyright   : Your copyright notice
  Description : Hello World in C, Ansi-style
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 	memset(&sad, 0, sizeof(sad));
 	sad.sin_family = AF_INET;
 	sad.sin_addr = *addr;
-	sad.sin_port = htons(6666);
+	sad.sin_port = htons(port);
 
 	//Inviamo primo messaggio
 	char* first = "Helo";
